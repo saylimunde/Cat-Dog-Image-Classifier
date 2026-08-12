@@ -1,17 +1,102 @@
+import torch
+
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
+
+# -----------------------------
+# Training transform
+# -----------------------------
 
 train_transform = transforms.Compose([
-    transforms.Resize((128,128)),
-    transforms.ToTensor()
+    transforms.Resize((128, 128)),
+    transforms.RandomHorizontalFlip(),
+
+    transforms.ToTensor(),
+
+    transforms.Normalize(
+        mean=[0.5, 0.5, 0.5],
+        std=[0.5, 0.5, 0.5]
+    )
 ])
 
-train_dataset = ImageFolder(
+
+# -----------------------------
+# Validation transform
+# -----------------------------
+
+validation_transform = transforms.Compose([
+    transforms.Resize((128, 128)),
+
+    transforms.ToTensor(),
+
+    transforms.Normalize(
+        mean=[0.5, 0.5, 0.5],
+        std=[0.5, 0.5, 0.5]
+    )
+])
+
+
+# -----------------------------
+# Load training dataset
+# -----------------------------
+
+train_dataset_full = ImageFolder(
     root="dataset/train",
     transform=train_transform
 )
+
+
+# -----------------------------
+# Load validation dataset
+# -----------------------------
+
+validation_dataset_full = ImageFolder(
+    root="dataset/train",
+    transform=validation_transform
+)
+
+
+# -----------------------------
+# Train / validation split
+# -----------------------------
+
+train_size = int(0.8 * len(train_dataset_full))
+
+validation_size = (
+    len(train_dataset_full) - train_size
+)
+
+
+generator = torch.Generator().manual_seed(42)
+
+indices = torch.randperm(
+    len(train_dataset_full),
+    generator=generator
+).tolist()
+
+
+train_indices = indices[:train_size]
+
+validation_indices = indices[train_size:]
+
+
+train_dataset = Subset(
+    train_dataset_full,
+    train_indices
+)
+
+
+validation_dataset = Subset(
+    validation_dataset_full,
+    validation_indices
+)
+
+
+# -----------------------------
+# DataLoaders
+# -----------------------------
 
 train_loader = DataLoader(
     train_dataset,
@@ -19,11 +104,33 @@ train_loader = DataLoader(
     shuffle=True
 )
 
+
+validation_loader = DataLoader(
+    validation_dataset,
+    batch_size=32,
+    shuffle=False
+)
+
+
+# -----------------------------
+# Test transform
+# -----------------------------
+
 test_transform = transforms.Compose([
     transforms.Resize((128, 128)),
-    transforms.ToTensor()
+
+    transforms.ToTensor(),
+
+    transforms.Normalize(
+        mean=[0.5, 0.5, 0.5],
+        std=[0.5, 0.5, 0.5]
+    )
 ])
 
+
+# -----------------------------
+# Test dataset
+# -----------------------------
 
 test_dataset = ImageFolder(
     root="dataset/test",
@@ -31,29 +138,12 @@ test_dataset = ImageFolder(
 )
 
 
+# -----------------------------
+# Test DataLoader
+# -----------------------------
+
 test_loader = DataLoader(
     test_dataset,
     batch_size=32,
     shuffle=False
 )
-
-
-
-print("Classes:", train_dataset.classes)
-print("Class to index:", train_dataset.class_to_idx)
-print("Number of images:", len(train_dataset))
-print("Number of batches:", len(train_loader))
-
-# from PIL import Image
-
-# image_path = r"dataset\train\cats"
-
-# print(train_transform)
-
-images, labels = next(iter(train_loader))
-
-print("Image batch shape:", images.shape)
-print("Label batch shape:", labels.shape)
-
-print("First image shape:", images[0].shape)
-print("First 10 labels:", labels[:10])
