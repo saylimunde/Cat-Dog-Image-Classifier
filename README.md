@@ -299,7 +299,7 @@ The model uses Softmax to convert its output scores into probabilities.
 ### 1. Clone the repository
 
 ```bash
-git clone <your-github-repository-url>
+git clone https://github.com/saylimunde/Cat-Dog-Image-Classifier.git
 ```
 
 ### 2. Open the project folder
